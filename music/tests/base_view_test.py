@@ -30,6 +30,9 @@ class BaseViewTest(APITestCase):
 
     def setUp(self):
         # add test data
+        self.valid_customers = []
+        self.invalid_customers = []
+
         users = [
             {"username": "test", "password": "1234qwer", "isStaff": False, "isAdmin": False},
             {"username": "staff", "password": "1234qwer", "isStaff": True, "isAdmin": False},

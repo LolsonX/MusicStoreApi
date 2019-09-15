@@ -10,5 +10,7 @@ urlpatterns = [
     path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     path('artists/', ListArtistView.as_view(), name="artists-all"),
-    path('artists/<int:id>', RetrieveUpdateDestroyArtistView.as_view(), name="artists-detail")
+    path('artists/<int:id>', RetrieveUpdateDestroyArtistView.as_view(), name="artists-detail"),
+    path('customers/', ListCustomerView.as_view(), name="customers-all"),
+    path('customer', RetrieveUpdateDestroyCustomerView.as_view(), name="customer")
 ]

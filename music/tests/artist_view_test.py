@@ -162,3 +162,9 @@ class ArtistViewTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(artist.first_name, "Karol")
         self.assertEqual(artist.last_name, "Ostrowski")
+
+    def should_delete_artist(self):
+        pass
+
+    def should_not_delete_artist(self):
+        pass

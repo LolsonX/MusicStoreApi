@@ -1,5 +1,4 @@
 from django.contrib.auth.models import User
-from django.urls import reverse
 from rest_framework.views import status
 
 from MusicApi.settings import SIMPLE_JWT
