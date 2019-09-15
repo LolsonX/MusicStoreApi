@@ -19,9 +19,11 @@ class BaseViewTest(APITestCase):
         return Song.objects.create(title=title, artist=artist)
 
     @staticmethod
-    def create_user(username, password):
+    def create_user(username, password, isStaff=False, isAdmin=False):
         u = User.objects.create()
         u.username = username
+        u.is_staff = isStaff
+        u.is_superuser = isAdmin
         u.set_password(password)
         u.save()
         return u
@@ -29,9 +31,15 @@ class BaseViewTest(APITestCase):
     def setUp(self):
         # add test data
         users = [
-            {"username": "test", "password": "1234qwer"}
+            {"username": "test", "password": "1234qwer", "isStaff": False, "isAdmin": False},
+            {"username": "staff", "password": "1234qwer", "isStaff": True, "isAdmin": False},
+            {"username": "admin", "password": "1234qwer", "isStaff": False, "isAdmin": True}
         ]
-        db_users = [self.create_user(user["username"], user["password"]) for user in users]
+        db_users = [self.create_user(
+            user["username"],
+            user["password"],
+            user["isStaff"],
+            user["isAdmin"]) for user in users]
         artists = [
             self.create_artist("Sean", "Paul"),
             self.create_artist("Konshens"),

@@ -1,16 +1,17 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from music.models import Artist
+from music.permissions.isStaffOrReadOnly import IsStaffOrReadOnly
 from music.serializers import ArtistSerializer
 
 
 class ListArtistView(generics.ListCreateAPIView):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsStaffOrReadOnly,)
     queryset = Artist.objects.all()
     serializer_class = ArtistSerializer
 
 
-class RetrieveArtistView(generics.RetrieveAPIView):
+class RetrieveUpdateDestroyArtistView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsStaffOrReadOnly, )
     serializer_class = ArtistSerializer
     queryset = Artist.objects.all()
     lookup_field = 'id'

@@ -43,42 +43,122 @@ class ArtistViewTest(BaseViewTest):
         response = self.client.post(reverse("artists-all"),
                                     data=json.dumps(self.valid_artist),
                                     content_type='application/json',
-                                    HTTP_AUTHORIZATION='Bearer {}'.format(self.login("test", "1234qwer").data["access"])
+                                    HTTP_AUTHORIZATION='Bearer {}'.format(self.login("staff", "1234qwer").data["access"])
                                     )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(count_before + 1, Artist.objects.count())
 
-    def test_should_not_create_artist(self):
         count_before = Artist.objects.count()
+        response = self.client.post(reverse("artists-all"),
+                                    data=json.dumps(self.valid_artist),
+                                    content_type='application/json',
+                                    HTTP_AUTHORIZATION='Bearer {}'.format(self.login("admin", "1234qwer").data["access"])
+                                    )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(count_before + 1, Artist.objects.count())
+
+    def test_not_staff_should_not_create_artist(self):
+        count_before = Artist.objects.count()
+        response = self.client.post(reverse("artists-all"),
+                                    data=json.dumps(self.invalid_artist),
+                                    content_type='application/json',
+                                    HTTP_AUTHORIZATION='Bearer {}'.format(self.login("test", "1234qwer").data["access"])
+                                    )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(count_before, Artist.objects.count())
+
+    def test_unauthenticated_should_not_create_artist(self):
+        count_before = Artist.objects.count()
+        # Test with not logged user but not staff with correct data
+
         response = self.client.post(reverse("artists-all"),
                                     data=json.dumps(self.valid_artist),
                                     content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(count_before, Artist.objects.count())
+
+    def test_should_not_create_artist(self):
+        count_before = Artist.objects.count()
+
         response = self.client.post(reverse("artists-all"),
                                     data=json.dumps(self.invalid_artist),
                                     content_type='application/json',
-                                    HTTP_AUTHORIZATION='Bearer {}'.format(self.login("test", "1234qwer").data["access"])
+                                    HTTP_AUTHORIZATION='Bearer {}'.format(
+                                        self.login("staff", "1234qwer").data["access"])
+                                    )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(count_before, Artist.objects.count())
+
+        response = self.client.post(reverse("artists-all"),
+                                    data=json.dumps(self.invalid_artist),
+                                    content_type='application/json',
+                                    HTTP_AUTHORIZATION='Bearer {}'.format(
+                                        self.login("admin", "1234qwer").data["access"])
                                     )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(count_before, Artist.objects.count())
 
     def test_should_update_artist(self):
         artist = self.create_artist("Karol", "Ostrowski")
-        response = self.client.put(reverse("artist-update"),
-                                   json.dumps({"first_name": "Stefan", "last_name": "Burak"}),
-                                   kwargs={'id': str(artist.id)})
+        response = self.client.put(reverse("artists-detail", kwargs={'id': str(artist.id)}),
+                                   data={"first_name": "Stefan", "last_name": "Burak"},
+                                   HTTP_AUTHORIZATION='Bearer {}'.format(
+                                       self.login("admin", "1234qwer").data["access"])
+                                   )
         artist.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(artist.first_name, "Stefan")
         self.assertEqual(artist.last_name, "Burak")
+        response = self.client.put(reverse("artists-detail", kwargs={'id': str(artist.id)}),
+                                   data={"first_name": "Karol", "last_name": "Ostrowski"},
+                                   HTTP_AUTHORIZATION='Bearer {}'.format(
+                                       self.login("staff", "1234qwer").data["access"])
+                                   )
+        artist.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(artist.first_name, "Karol")
+        self.assertEqual(artist.last_name, "Ostrowski")
+
+    def test_unauthorized_should_not_update_artist(self):
+        artist = self.create_artist("Karol", "Ostrowski")
+        response = self.client.put(reverse("artists-detail", kwargs={'id': str(artist.id)}),
+                                   data={"first_name": "", "last_name": ""}
+                                   )
+        artist.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(artist.first_name, "Karol")
+        self.assertEqual(artist.last_name, "Ostrowski")
+
+    def test_not_staff_should_not_update_artist(self):
+        artist = self.create_artist("Karol", "Ostrowski")
+        response = self.client.put(reverse("artists-detail", kwargs={'id': str(artist.id)}),
+                                   data={"first_name": "Asd", "last_name": "Asd"},
+                                   HTTP_AUTHORIZATION='Bearer {}'.format(
+                                       self.login("test", "1234qwer").data["access"])
+                                   )
+        artist.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(artist.first_name, "Karol")
+        self.assertEqual(artist.last_name, "Ostrowski")
 
     def test_should_not_update_artist(self):
         artist = self.create_artist("Karol", "Ostrowski")
-        response = self.client.put(reverse("artist-update"),
-                                   json.dumps({"first_name": "", "last_name": ""}),
-                                   kwargs={'id': str(artist.id)})
+        response = self.client.put(reverse("artists-detail", kwargs={'id': str(artist.id)}),
+                                   data={"first_name": "", "last_name": ""},
+                                   HTTP_AUTHORIZATION='Bearer {}'.format(
+                                       self.login("admin", "1234qwer").data["access"])
+                                   )
         artist.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertNotEqual(artist.first_name, "")
-        self.assertNotEqual(artist.last_name, "")
+        self.assertEqual(artist.first_name, "Karol")
+        self.assertEqual(artist.last_name, "Ostrowski")
+
+        response = self.client.put(reverse("artists-detail", kwargs={'id': str(artist.id)}),
+                                   data={"first_name": "", "last_name": ""},
+                                   HTTP_AUTHORIZATION='Bearer {}'.format(
+                                       self.login("staff", "1234qwer").data["access"])
+                                   )
+        artist.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(artist.first_name, "Karol")
+        self.assertEqual(artist.last_name, "Ostrowski")
